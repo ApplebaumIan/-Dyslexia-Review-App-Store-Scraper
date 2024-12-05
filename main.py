@@ -41,8 +41,18 @@ def fetch_reviews(app_id, country):
     response.raise_for_status()  # Raise an error for bad status codes
     return response.text
 
-
-def parse_and_filter_reviews(xml_data):
+def get_app_name_from_api(app_id):
+    """
+    Fetches the app name using the iTunes Search API.
+    """
+    url = f"https://itunes.apple.com/lookup?id={app_id}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if data["resultCount"] > 0:
+            return data["results"][0]["trackName"]  # Extract app name
+    return None
+def parse_and_filter_reviews(xml_data, app_id):
     root = ET.fromstring(xml_data)
     namespace = {
         'feed': 'http://www.w3.org/2005/Atom',
@@ -51,7 +61,7 @@ def parse_and_filter_reviews(xml_data):
     entries = root.findall('feed:entry', namespace)
 
     # Extract the app name from the feed's metadata
-    app_name = root.find('feed:title', namespace).text if root.find('feed:title', namespace) is not None else "Unknown App"
+    app_name = get_app_name_from_api(app_id)
 
     filtered_reviews = []
     for entry in entries:
@@ -75,18 +85,20 @@ def parse_and_filter_reviews(xml_data):
 
 
 def contains_dyslexia_keywords(content):
-    dyslexia_keywords = ['dyslexia', 'reading difficulty', 'learning disorder', 'reading impairment']
+    dyslexia_keywords = ['dyslexia', 'reading difficulty', 'learning disorder', 'reading impairment', 'dyslexic', 'As a Dyslexic', 'I am dyslexic', 'neurodivergent', 'difficulty reading', ]
     return any(keyword.lower() in content.lower() for keyword in dyslexia_keywords)
 
 
 def main():
     app_id = input("Enter the App ID: ")
+    if 'http' in app_id:
+        app_id = app_id.split("/id")[-1].split("?")[0]
     country = input("Enter the Country Code (e.g., 'us'): ").strip()
 
     print("Fetching reviews...")
     xml_data = fetch_reviews(app_id, country)
     print("Parsing and filtering reviews...")
-    filtered_reviews = parse_and_filter_reviews(xml_data)
+    filtered_reviews = parse_and_filter_reviews(xml_data, app_id)
 
     print(f"Found {len(filtered_reviews)} reviews mentioning Dyslexia.")
     for review in filtered_reviews:

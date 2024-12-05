@@ -2,3 +2,12 @@ This is a very simple script to download App Store reviews related to Dyslexia. 
 1. Install the `requests`
 2. `touch app_reviews.db` or create the file however is easiest for you.
 3. Run `python main.py` and enter the app id (which can be found at the end of any App Store share url after 'id'.)
+
+To view the data locally:
+
+```shell
+yarn && yarn run build
+python serve.py
+```
+
+go to http://localhost:5001

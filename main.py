@@ -95,26 +95,42 @@ def contains_dyslexia_keywords(content):
 
 
 def search_apps_by_keyword(keyword):
-    url = f"https://itunes.apple.com/search?term={keyword}&entity=software"
+    url = f"https://itunes.apple.com/search?term={keyword}&entity=software&limit=200"
     response = requests.get(url)
     response.raise_for_status()  # Raise an error for bad status codes
     data = response.json()
     apps = []
+    variations = ["dyslexia", "dyslexic", "dyslexiabuddy", "dyslexi"]
+
     if data["resultCount"] > 0:
         for result in data["results"]:
-            apps.append({
-                "app_id": result["trackId"],
-                "app_name": result["trackName"]
-            })
+            # Convert app name to lowercase for case-insensitive comparison
+            name_lower = result["trackName"].lower()
+            # Check if any of the listed variations appear in the name
+            if any(variation in name_lower for variation in variations):
+                apps.append({
+                    "app_id": result["trackId"],
+                    "app_name": result["trackName"]
+                })
     return apps
 
 
 def search_all():
-    keyword = "dyslexia"
+    keywords = ["dyslexia", "dyslexia help", "dyslexia reading",
+                "dyslexia support", "dyslexia learning", "dyslexia tutor"]
     country = input("Enter the Country Code (e.g., 'us'): ").strip()
-    print(f"Searching for apps related to '{keyword}'...")
-    apps = search_apps_by_keyword(keyword)
-    print(f"Found {len(apps)} apps.")
+
+    apps = []
+
+    for keyword in keywords:
+        print(f"Searching for apps related to '{keyword}'...")
+        search_result = search_apps_by_keyword(keyword)
+
+        for app in search_result:
+            if app not in apps:
+                apps.append(app)
+    print(f"Found {len(apps)} apps with word dyslexia in their title")
+
     setup_database()
     for app in apps:
         app_id = app["app_id"]
